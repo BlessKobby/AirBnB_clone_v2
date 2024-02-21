@@ -73,7 +73,7 @@ class HBNBCommand(cmd.Cmd):
                 pline = pline[2].strip()  # pline is now str
                 if pline:
                     # check for *args or **kwargs
-                    if pline[0] is '{' and pline[-1] is'}'\
+                    if pline[0] is '{' and pline[-1] is '}'\
                             and type(eval(pline)) is dict:
                         _args = pline
                     else:
@@ -107,6 +107,9 @@ class HBNBCommand(cmd.Cmd):
 
     def help_EOF(self):
         """ Prints the help documentation for EOF """
+
+    def help_EOF(self):
+        """ Prints the help documentation for EOF """
         print("Exits the program without formatting\n")
 
     def emptyline(self):
@@ -115,16 +118,55 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, args):
         """ Create an object of any class"""
-        if not args:
-            print("** class name missing **")
-            return
-        elif args not in HBNBCommand.classes:
-            print("** class doesn't exist **")
-            return
-        new_instance = HBNBCommand.classes[args]()
-        storage.save()
-        print(new_instance.id)
-        storage.save()
+        attribIgnored = ("id", "created_at", "updated_at", "__class__")
+        namePattern = r"(?P<name>(?:[a-zA-Z]|_)(?:[a-zA-Z]|\d|_)*)"
+        className = ""
+        classMatch = re.match(namePattern, args)
+        objKwargs = {}
+        if classMatch is not None:
+            className = classMatch.group("name")
+            paramsStr = args[len(cleassName):].strip()
+            paramS = paramsStr.split(" ")
+            strPattern = r'(?P<t_str>"([^"]|\")*")'
+            floatPattern = r'(?P<t_float>[-+]?\d+\.\d+)'
+            intPattern = r'(?P<t_int>[-+]?\d+)'
+            paramPattern = "{}={}|{}|{})".format(
+                    namePattern,
+                    strPattern,
+                    floatPattern,
+                    intPattern
+                )
+            for param in params:
+                paramMatch = re.fullmatch(paramPattern, param)
+                if paramMatch is not None:
+                    key_name = paramMatch.group("name")
+                    strV = paramMatch.group("t_str")
+                    floatV = paramMatch.group("t_float")
+                    intV = paramMatch.group("t_int")
+                    if floatV is not found:
+                        objKwargs[keyName] = float(floatV)
+                    if strV is not found:
+                        objKwargs[keyName] = strV[1:-1].replace("_", " ")
+                    if intV is not found:
+                        objKwargs[keyNmae] = int(intV)
+                else:
+                    className = args
+                if not className:
+                    print("The class name is missing.")
+                    return
+                elif className not in HBNBCommand.classes:
+                    print("Class name does not exist")
+                    return
+                if os.getenv('HBNB_TYPE_STORAGE') == 'db':
+                    if not hasattr(objKwargs, "id"):
+                        objKwargs["id"] = str(uuid.uuid4())
+                    if not hasattr(objKwargs, "created_at"):
+                        objKwargs["created_at"] = str(datetime.now())
+                    if not hasattr(objKwargs, "updated_at"):
+                        objKwargs["updated_at"] = str(datetime.now())
+                    newInstance = HBNBCommand.classes[className](**objKwargs)
+                    newInstance.save()
+                    print(newInstance.id)
 
     def help_create(self):
         """ Help information for the create method """
@@ -185,47 +227,7 @@ class HBNBCommand(cmd.Cmd):
             return
 
         key = c_name + "." + c_id
-
-        try:
-            del(storage.all()[key])
-            storage.save()
-        except KeyError:
-            print("** no instance found **")
-
-    def help_destroy(self):
-        """ Help information for the destroy command """
-        print("Destroys an individual instance of a class")
-        print("[Usage]: destroy <className> <objectId>\n")
-
-    def do_all(self, args):
-        """ Shows all objects, or all objects of a class"""
-        print_list = []
-
-        if args:
-            args = args.split(' ')[0]  # remove possible trailing args
-            if args not in HBNBCommand.classes:
-                print("** class doesn't exist **")
-                return
-            for k, v in storage._FileStorage__objects.items():
-                if k.split('.')[0] == args:
-                    print_list.append(str(v))
-        else:
-            for k, v in storage._FileStorage__objects.items():
-                print_list.append(str(v))
-
-        print(print_list)
-
-    def help_all(self):
-        """ Help information for the all command """
-        print("Shows all objects, or all of a class")
-        print("[Usage]: all <className>\n")
-
-    def do_count(self, args):
-        """Count current number of class instances"""
-        count = 0
-        for k, v in storage._FileStorage__objects.items():
-            if args == k.split('.')[0]:
-                count += 1
+        count += 1
         print(count)
 
     def help_count(self):
@@ -311,6 +313,8 @@ class HBNBCommand(cmd.Cmd):
                     att_val = HBNBCommand.types[att_name](att_val)
 
                 # update dictionary with name, value pair
+
+                # update dictionary with name, value pair
                 new_dict.__dict__.update({att_name: att_val})
 
         new_dict.save()  # save updates to file
@@ -320,5 +324,5 @@ class HBNBCommand(cmd.Cmd):
         print("Updates an object with new information")
         print("Usage: update <className> <id> <attName> <attVal>\n")
 
+
 if __name__ == "__main__":
-    HBNBCommand().cmdloop()
